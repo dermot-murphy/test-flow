@@ -1,0 +1,76 @@
+name: Docker Build and Push
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  DOCKER_TARGET: test-flow
+  DOCKER_TEST_TAG: canembed/test-flow:test
+  DOCKER_LATEST_TAG: canembed/test-flow:latest
+
+jobs:
+
+  Build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Extract metadata for Docker
+      id:   meta
+      uses: docker/metadata-action@v5
+      with:
+          images: canembed/${{env.DOCKER_TARGET}}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+    - name: Build and export to Docker
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        load: true
+        tags: ${{ env.DOCKER_TEST_TAG }}
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3 
+      with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PAT }}
+                
+    - name: Docker Hub Description
+      uses: peter-evans/dockerhub-description@v3
+      with:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+        repository: peterevans/dockerhub-description
+        short-description: ${{ github.event.repository.description }}
+        enable-url-completion: true
+            
+    - name: Build and Push
+      uses: docker/build-push-action@v5
+      with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ env.DOCKER_LATEST_TAG }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  Test:
+    needs: Build
+    runs-on: ubuntu-latest
+    container: |
+      image: canembed/test-flow:latest
+
+    steps:
+    
+    - name: CMake version
+      run: cmake --version
+
+  
