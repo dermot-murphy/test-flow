@@ -4,6 +4,7 @@ on:
         push:
                 paths:
                         - 'docker/**'
+                        - '.gihub/workflows/**'
 
 env:
         DOCKER_TEST_TAG:        canembed/test-flow:test
@@ -73,7 +74,7 @@ jobs:
         Test:
                 needs: Build
                 runs-on: ubuntu-latest
-                container: |
+                container:
                         image: ${{ env.DOCKER_LATEST_TAG }}
 
                 steps:
