@@ -85,9 +85,6 @@ jobs:
                         -       name: Remove Image and Download Latest
                                 run:  docker run --rm ${{ env.DOCKER_LATEST_TAG }}
 
-                        -       name: Check for improvements
-                                run: docker scout recommendations ${{ env.DOCKER_LATEST_TAG }}
-                                
                         -       name: Bash Version
                                 run:  docker run -v .:/data -w /data ${{ env.DOCKER_LATEST_TAG }} bash --version
 
